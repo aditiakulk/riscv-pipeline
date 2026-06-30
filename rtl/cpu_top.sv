@@ -263,6 +263,44 @@ module cpu_top (
         .result   (ex_alu_result),
         .zero     (ex_zero)
     );
+*/
+    // FORWARDING UNIT : compares register addresses across pipeline stages and generates MUX signals to tell the EX
+    // where to get its operands.
+    logic [1:0] forward_a, forward_b;
+    forwarding_unit fwd_inst (
+        .ex_rs1_addr  (ex_rs1_addr),
+        .ex_rs2_addr  (ex_rs2_addr),
+        .mem_rd_addr  (mem_rd_addr),
+        .mem_reg_write(mem_reg_write),
+        .wb_rd_addr   (wb_rd_addr),
+        .wb_reg_write (wb_reg_write),
+        .forward_a    (forward_a),
+        .forward_b    (forward_b)
+        );
+    // --- Hazard Unit ---
+    // Detects load-use hazards and generates stall + bubble signals.
+    hazard_unit haz_inst (
+        .ex_rd_addr   (ex_rd_addr),
+        .ex_mem_read  (ex_mem_read),
+        .id_rs1_addr  (id_rs1_addr),
+        .id_rs2_addr  (id_rs2_addr),
+        .stall        (stall),
+        .id_ex_flush  (id_ex_flush)
+    );
+        // --- EX: Forwarding Muxes + ALU Source Mux ---
+        // forward_a/forward_b select the actual value that feeds the ALU:
+        //   00 = from register file (no hazard)
+        //   10 = forwarded from EX/MEM stage (1 cycle ahead)
+        //   01 = forwarded from MEM/WB stage (2 cycles ahead)
+        logic [31:0] ex_forward_a_out;
+        logic [31:0] ex_forward_b_out;
+
+        always_comb begin
+            case (forward_a)
+                2'b10:   ex_forward_a_out = mem_alu_result;
+                2'b01:   ex_forward_a_out = wb_write_data;
+                default: ex_forward_a_out = ex_rs1_data;
+            endcase
 
     // --- EX/MEM Pipeline Register ---
     ex_mem_reg ex_mem_inst (
