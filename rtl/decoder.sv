@@ -18,7 +18,8 @@ module decoder (
     output logic        reg_write,    // 1 = this instruction writes a register
     output logic        mem_read,     // 1 = this is a load (LW)
     output logic        mem_write,    // 1 = this is a store (SW)
-    output logic        branch        // 1 = this is a branch (BEQ)
+    output logic        branch,       // 1 = this is a branch (BEQ)
+    output logic        mem_to_reg    // 1 = writeback comes from memory (LW), 0 = from ALU
 );
 
     // Opcodes for our 6-instruction ISA
@@ -101,6 +102,7 @@ module decoder (
         mem_read  = 1'b0;
         mem_write = 1'b0;
         branch    = 1'b0;
+        mem_to_reg = 1'b0;
 
         case (opcode)
             OP_RTYPE: begin
@@ -120,6 +122,7 @@ module decoder (
                 alu_src   = 1'b1;          // address = rs1 + immediate
                 alu_ctrl  = ALU_ADD;
                 mem_read  = 1'b1;
+                mem_to_reg = 1'b1;          // writeback value comes from data memory, not ALU
             end
 
             OP_STORE: begin

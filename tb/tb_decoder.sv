@@ -11,7 +11,7 @@ module tb_decoder;
     logic [4:0]  rs1_addr, rs2_addr, rd_addr;
     logic [31:0] imm;
     logic [2:0]  alu_ctrl;
-    logic        alu_src, reg_write, mem_read, mem_write, branch;
+    logic        alu_src, reg_write, mem_read, mem_write, branch, mem_to_reg;
 
     decoder dut (
         .instr(instr),
@@ -24,7 +24,8 @@ module tb_decoder;
         .reg_write(reg_write),
         .mem_read(mem_read),
         .mem_write(mem_write),
-        .branch(branch)
+        .branch(branch),
+        .mem_to_reg(mem_to_reg)
     );
 
     initial begin
