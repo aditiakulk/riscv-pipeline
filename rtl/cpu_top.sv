@@ -33,9 +33,9 @@ module cpu_top (
     // runs without hazard handling and we can verify basic correctness first.
     logic        stall;            // week 5: will come from hazard unit
     logic        branch_taken;     // week 6: will come from EX/MEM stage
-    logic [31:0] branch_target;    // week 6: will come from EX stage adder
-
-    assign stall         = 1'b0;   // no stalls yet
+    logic [31:0] branch_target;    // week 6: will come from EX stage added
+    logic id_ex_flush;             // insert bubble into ID/EX from hazard unit
+    // assign stall         = 1'b0;   // no stalls yet
     assign branch_taken  = 1'b0;   // no branches yet
     assign branch_target = 32'b0;
 
@@ -206,7 +206,7 @@ module cpu_top (
     id_ex_reg id_ex_inst (
         .clk          (clk),
         .rst          (rst),
-        .flush        (1'b0),          // week 6: wire to branch flush
+        .flush        (id_ex_flush),          // week 6: wire to branch flush
         .pc_in        (id_pc),
         .rs1_data_in  (id_rs1_data),
         .rs2_data_in  (id_rs2_data),
@@ -249,7 +249,7 @@ module cpu_top (
             mem_mem_to_reg_r <= ex_mem_to_reg_r;
         end
     end
-
+/* REPLACE ENTIRE UNIT W FORWARDING UNIT
     // --- EX: ALU Source Mux ---
     // Decoder says alu_src=1: use the sign-extended immediate as operand B.
     // alu_src=0: use rs2 value (register-to-register operation).
@@ -302,12 +302,30 @@ module cpu_top (
                 default: ex_forward_a_out = ex_rs1_data;
             endcase
 
+            case (forward_b)
+                2'b10:   ex_forward_b_out = mem_alu_result;
+                2'b01:   ex_forward_b_out = wb_write_data;
+                default: ex_forward_b_out = ex_rs2_data;
+            endcase
+        end
+
+        // ALU source mux: immediate overrides forwarded rs2 for I-type instructions
+        assign ex_alu_operand_b = ex_alu_src ? ex_imm : ex_forward_b_out;
+
+        // --- EX: ALU ---
+        alu alu_inst (
+            .a        (ex_forward_a_out),
+            .b        (ex_alu_operand_b),
+            .alu_ctrl (ex_alu_ctrl),
+            .result   (ex_alu_result),
+            .zero     (ex_zero)
+        );
     // --- EX/MEM Pipeline Register ---
     ex_mem_reg ex_mem_inst (
         .clk           (clk),
         .rst           (rst),
         .alu_result_in (ex_alu_result),
-        .rs2_data_in   (ex_rs2_data),     // store data for SW
+        .rs2_data_in   (ex_forward_b_out),     // forward the stored data for SW
         .rd_addr_in    (ex_rd_addr),
         .zero_flag_in  (ex_zero),
         .reg_write_in  (ex_reg_write),
