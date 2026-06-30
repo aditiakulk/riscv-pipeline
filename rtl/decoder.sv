@@ -32,13 +32,37 @@ module decoder (
     localparam ALU_ADD = 3'b000;
     localparam ALU_SUB = 3'b001;
 
-    logic [6:0] opcode;
-    logic [2:0] funct3;
-    logic [6:0] funct7;
+    // All field extraction is done here, once, as plain continuous
+    // assignments. This avoids constant part-selects appearing inside
+    // always_comb blocks, which is what Icarus warns about -- pulling
+    // these out into named wires sidesteps the issue entirely and
+    // also makes the rest of the module easier to read.
+    logic [6:0]  opcode;
+    logic [2:0]  funct3;
+    logic        funct7_bit5;   // distinguishes ADD (0) vs SUB (1)
+    logic        sign_bit;
 
-    assign opcode = instr[6:0];
-    assign funct3 = instr[14:12];
-    assign funct7 = instr[31:25];
+    // I-type immediate field: instr[31:20]
+    logic [11:0] itype_imm_raw;
+    // S-type immediate fields: instr[31:25] and instr[11:7]
+    logic [6:0]  stype_imm_hi;
+    logic [4:0]  stype_imm_lo;
+    // B-type immediate fields: instr[7], instr[30:25], instr[11:8]
+    logic        btype_imm_b11;
+    logic [5:0]  btype_imm_hi;
+    logic [3:0]  btype_imm_lo;
+
+    assign opcode      = instr[6:0];
+    assign funct3      = instr[14:12];
+    assign funct7_bit5 = instr[30];
+    assign sign_bit    = instr[31];
+
+    assign itype_imm_raw = instr[31:20];
+    assign stype_imm_hi  = instr[31:25];
+    assign stype_imm_lo  = instr[11:7];
+    assign btype_imm_b11 = instr[7];
+    assign btype_imm_hi  = instr[30:25];
+    assign btype_imm_lo  = instr[11:8];
 
     // Register fields -- these bit positions are the same across
     // R, I, S, and B formats, which is intentional RISC-V design
@@ -47,28 +71,21 @@ module decoder (
     assign rd_addr  = instr[11:7];
 
     // Immediate generation -- different for each format.
-    // Sign-extension matters: we replicate bit 31 (or whatever the
-    // top immediate bit is) to fill the upper bits, so negative
-    // immediates work correctly in arithmetic.
-    logic sign_bit;
-    assign sign_bit = instr[31];
-
+    // Sign-extension matters: we replicate the sign bit to fill the
+    // upper bits, so negative immediates work correctly in arithmetic.
     always_comb begin
         case (opcode)
             OP_ITYPE, OP_LOAD:
-                // I-type: imm[11:0] = instr[31:20], sign-extend
-                imm = {{20{sign_bit}}, instr[31:20]};
+                imm = {{20{sign_bit}}, itype_imm_raw};
 
             OP_STORE:
-                // S-type: imm[11:5] = instr[31:25], imm[4:0] = instr[11:7]
-                imm = {{20{sign_bit}}, instr[31:25], instr[11:7]};
+                imm = {{20{sign_bit}}, stype_imm_hi, stype_imm_lo};
 
             OP_BRANCH:
-                // B-type: imm is encoded oddly (bit-scrambled for hardware
-                // efficiency in real implementations), but conceptually
-                // it's a signed offset. Simplified encoding for our subset:
-                imm = {{19{sign_bit}}, sign_bit, instr[7],
-                       instr[30:25], instr[11:8], 1'b0};
+                // B-type: imm is bit-scrambled for hardware efficiency in
+                // real implementations. Simplified encoding for our subset:
+                imm = {{19{sign_bit}}, sign_bit, btype_imm_b11,
+                       btype_imm_hi, btype_imm_lo, 1'b0};
 
             default:
                 imm = 32'b0;
@@ -89,7 +106,7 @@ module decoder (
             OP_RTYPE: begin
                 reg_write = 1'b1;
                 alu_src   = 1'b0;          // operand b = rs2
-                alu_ctrl  = (funct7[5]) ? ALU_SUB : ALU_ADD; // funct7 bit distinguishes ADD/SUB
+                alu_ctrl  = funct7_bit5 ? ALU_SUB : ALU_ADD; // funct7 bit distinguishes ADD/SUB
             end
 
             OP_ITYPE: begin
