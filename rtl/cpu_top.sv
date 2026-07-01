@@ -35,9 +35,11 @@ module cpu_top (
     logic        branch_taken;     // week 6: will come from EX/MEM stage
     logic [31:0] branch_target;    // week 6: will come from EX stage added
     logic id_ex_flush;             // insert bubble into ID/EX from hazard unit
-    // assign stall         = 1'b0;   // no stalls yet
-    assign branch_taken  = 1'b0;   // no branches yet
-    assign branch_target = 32'b0;
+    // assign stall         = 1'b0;
+    // assign branch_taken  = 1'b0;   // remove placeholders
+    // assign branch_target = 32'b0;
+    logic if_flush;
+    logic haz_id_ex_flush;
 
     // Instruction memory output
     logic [31:0] if_instr;         // instruction fetched this cycle
