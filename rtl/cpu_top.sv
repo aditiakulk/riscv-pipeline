@@ -398,7 +398,7 @@ module cpu_top (
         always_comb branch_taken_comb = ex_branch & ex_zero;
         assign branch_taken  = branch_taken_comb;
         assign branch_target = ex_branch_target;
-        assign if_flush      = branch_taken;
-        assign id_ex_flush   = haz_id_ex_flush || branch_taken;
+        assign if_flush      = branch_taken_comb;
+        assign id_ex_flush   = haz_id_ex_flush | branch_taken_comb;
 
 endmodule
