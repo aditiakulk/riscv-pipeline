@@ -320,6 +320,14 @@ module cpu_top (
             .result   (ex_alu_result),
             .zero     (ex_zero)
         );
+    // Branch Target Adder: computes PC + imm while the ALU is computing rs1-rs2 for the branch condition check.
+    logic [31:0] ex_branch_target;
+    branch_adder branch_adder_inst (
+        .pc            (ex_pc),
+        .imm           (ex_imm),
+        .target        (ex_branch_target)
+    );
+
     // --- EX/MEM Pipeline Register ---
     ex_mem_reg ex_mem_inst (
         .clk           (clk),
