@@ -385,5 +385,15 @@ module cpu_top (
 
     // wb_write_data and wb_reg_write and wb_rd_addr feed back into
     // the regfile instantiation above -- completing the pipeline loop.
+    // Brach control: flush if IF/ID (wrong fetch) and ID/EX (wrong decode)
+    logic [31:0] mem_branch_target;
+    always_ff @(posedge clk) begin
+        if (rst) mem_branch_target <= 32'b0;
+        else mem_branch_target <= ex_branch_target;
+    end
+    assign branch_taken = mem_branch && mem_zero;
+    assign branch_target = mem_branch_target;
+    assign if_flush = branch_taken;
+    assign id_ex_flush = haz_id_ex_flush || branch_taken;
 
 endmodule
