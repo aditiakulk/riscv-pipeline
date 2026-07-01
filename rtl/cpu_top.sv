@@ -32,7 +32,7 @@ module cpu_top (
     // logic (week 6). For now, tie them to safe defaults so the pipeline
     // runs without hazard handling and we can verify basic correctness first.
     logic        stall;            // week 5: will come from hazard unit
-    logic        branch_taken;     // week 6: will come from EX/MEM stage
+    wire         branch_taken;     // week 6: will come from EX/MEM stage
     logic [31:0] branch_target;    // week 6: will come from EX stage added
     logic id_ex_flush;             // insert bubble into ID/EX from hazard unit
     // assign stall         = 1'b0;
