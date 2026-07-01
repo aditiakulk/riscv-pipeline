@@ -285,7 +285,7 @@ module cpu_top (
         .id_rs1_addr  (id_rs1_addr),
         .id_rs2_addr  (id_rs2_addr),
         .stall        (stall),
-        .id_ex_flush  (id_ex_flush)
+        .id_ex_flush  (haz_id_ex_flush)
     );
         // --- EX: Forwarding Muxes + ALU Source Mux ---
         // forward_a/forward_b select the actual value that feeds the ALU:
