@@ -159,7 +159,7 @@ module cpu_top (
         .clk       (clk),
         .rst       (rst),
         .stall     (stall),
-        .flush     (1'b0),         // week 6: wire to branch flush signal
+        .flush     (if_flush),         // flush signal
         .instr_in  (if_instr),
         .pc_in     (pc_current),
         .instr_out (id_instr),
