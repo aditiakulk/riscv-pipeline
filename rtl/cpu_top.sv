@@ -394,7 +394,9 @@ module cpu_top (
         // Flushing: when branch taken, flush IF/ID (1 wrong fetch) only --
         // the instruction in ID/EX is the one right after the branch which
         // was fetched before we knew the branch was taken.
-        assign branch_taken  = ex_branch && ex_zero;
+        logic branch_taken_comb;
+        always_comb branch_taken_comb = ex_branch & ex_zero;
+        assign branch_taken  = branch_taken_comb;
         assign branch_target = ex_branch_target;
         assign if_flush      = branch_taken;
         assign id_ex_flush   = haz_id_ex_flush || branch_taken;
