@@ -1,20 +1,16 @@
 // ex_mem_reg.sv
 // Pipeline register between Execute and Memory stages.
-//
-// By this point the ALU has already computed its result. This register
-// carries that result forward, plus rs2_data (needed as the value to
-// STORE for SW instructions -- the address comes from the ALU result,
-// but the data being written comes from rs2), plus whatever control
-// signals MEM and WB still need.
+// Added flush support to clear on branch misprediction.
 
 module ex_mem_reg (
     input  logic        clk,
     input  logic        rst,
+    input  logic        flush,         // NEW: clear on branch taken
 
     input  logic [31:0] alu_result_in,
-    input  logic [31:0] rs2_data_in,   // store data for SW
+    input  logic [31:0] rs2_data_in,
     input  logic [4:0]  rd_addr_in,
-    input  logic        zero_flag_in,  // for branch decision
+    input  logic        zero_flag_in,
 
     input  logic        reg_write_in,
     input  logic        mem_read_in,
@@ -33,7 +29,7 @@ module ex_mem_reg (
 );
 
     always_ff @(posedge clk) begin
-        if (rst) begin
+        if (rst || flush) begin
             alu_result_out <= 32'b0;
             rs2_data_out   <= 32'b0;
             rd_addr_out    <= 5'b0;

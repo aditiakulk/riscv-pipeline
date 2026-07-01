@@ -1,22 +1,17 @@
 // mem_wb_reg.sv
 // Pipeline register between Memory and Writeback stages.
-//
-// The last one. By now we have two candidate values that might get
-// written back to the register file: the ALU result (for ADD/SUB/ADDI)
-// or the value just read from data memory (for LW). Both get carried
-// forward here -- the actual choice between them happens in the
-// Writeback stage itself via a mux, since that's conceptually part of
-// "writing back," not part of memory access.
+// Added flush support to clear on branch misprediction.
 
 module mem_wb_reg (
     input  logic        clk,
     input  logic        rst,
+    input  logic        flush,         // NEW: clear on branch taken
 
     input  logic [31:0] alu_result_in,
-    input  logic [31:0] mem_data_in,    // value read from data memory (LW)
+    input  logic [31:0] mem_data_in,
     input  logic [4:0]  rd_addr_in,
     input  logic        reg_write_in,
-    input  logic        mem_to_reg_in,  // 1 = writeback mem_data, 0 = writeback alu_result
+    input  logic        mem_to_reg_in,
 
     output logic [31:0] alu_result_out,
     output logic [31:0] mem_data_out,
@@ -26,7 +21,7 @@ module mem_wb_reg (
 );
 
     always_ff @(posedge clk) begin
-        if (rst) begin
+        if (rst || flush) begin
             alu_result_out <= 32'b0;
             mem_data_out   <= 32'b0;
             rd_addr_out    <= 5'b0;
