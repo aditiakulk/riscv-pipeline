@@ -40,6 +40,7 @@ module cpu_top (
     // assign branch_target = 32'b0;
     logic if_flush;
     logic haz_id_ex_flush;
+    logic branch_taken_comb;
 
     // Instruction memory output
     logic [31:0] if_instr;         // instruction fetched this cycle
@@ -394,7 +395,6 @@ module cpu_top (
         // Flushing: when branch taken, flush IF/ID (1 wrong fetch) only --
         // the instruction in ID/EX is the one right after the branch which
         // was fetched before we knew the branch was taken.
-        logic branch_taken_comb;
         always_comb branch_taken_comb = ex_branch & ex_zero;
         assign branch_taken  = branch_taken_comb;
         assign branch_target = ex_branch_target;
