@@ -33,7 +33,7 @@ module cpu_top (
     // runs without hazard handling and we can verify basic correctness first.
     logic        stall;            // week 5: will come from hazard unit
     wire         branch_taken;     // week 6: will come from EX/MEM stage
-    logic [31:0] branch_target;    // week 6: will come from EX stage added
+    wire  [31:0] branch_target;    // driven by branch adder via assign
     logic id_ex_flush;             // insert bubble into ID/EX from hazard unit
     // assign stall         = 1'b0;
     // assign branch_taken  = 1'b0;   // remove placeholders
